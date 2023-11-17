@@ -12,9 +12,14 @@ from base.evaluator import evaluate
 
 
 
+import time
+import numpy as np
+import utils
+import h_env
+
 class DDPGTrainer:
     """
-    The DQNTrainer class implements a trainer for the DDPGAgent.
+    The DDPGTrainer class implements a trainer for the DDPGAgent.
 
     Parameters
     ----------
@@ -62,27 +67,18 @@ class DDPGTrainer:
 
             first_time_touch = 1
             for step in range(self._config['max_steps']):
-                if self._config['TD3agent']:
-                    a1 = agent.act(ob, noise=self._config['noise'])
-                else:
-                    a1 = agent.act(ob, eps=epsilon)
-                if self._config['mode'] == 'defense':
-                    a2 = opponent.act(obs_agent2)
-                elif self._config['mode'] == 'shooting':
-                    a2 = [0, 0, 0, 0]
-                else:
-                    a2 = opponent.act(obs_agent2)
+                a1 = agent.act(ob, eps=epsilon)
+                a2 = opponent.act(obs_agent2)
+
                 (ob_new, reward, done, _info) = env.step(np.hstack([a1, a2]))
                 touched = max(touched, _info['reward_touch_puck'])
                 current_reward = reward + 5 * _info['reward_closeness_to_puck'] - (
                         1 - touched) * 0.1 + touched * first_time_touch * 0.1 * step
 
-
                 total_reward += current_reward
 
                 first_time_touch = 1 - touched
                 agent.store_transition((ob, a1, current_reward, ob_new, done))
-
 
                 if self._config['show']:
                     time.sleep(0.01)
@@ -110,7 +106,7 @@ class DDPGTrainer:
                 agent.eval()
 
                 rew, touch, won, lost = evaluate(agent, env, h_env.BasicOpponent(weak=True),
- self._config['eval_episodes'], quiet=True)
+                                                self._config['eval_episodes'], quiet=True)
                 agent.train_mode()
 
                 eval_stats['reward'].append(rew)
@@ -120,7 +116,6 @@ class DDPGTrainer:
                 self.logger.save_model(agent, f'a-{episode_counter}.pkl')
 
                 self.logger.plot_intermediate_stats(eval_stats, show=False)
-
 
             agent.schedulers_step()
             episode_counter += 1
@@ -146,7 +141,6 @@ class DDPGTrainer:
         self.logger.save_model(agent, 'agent.pkl')
 
         # Log rew histograms
-
         print(eval_stats['won'])
 
         if eval:
