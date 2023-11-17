@@ -6,12 +6,12 @@ import sys
 sys.path.insert(0, '.')
 sys.path.insert(1, '..')
 from utils.utils import *
-from base.evaluator import evaluate
+from evaluator import evaluate
 
 parser = ArgumentParser()
 
 # Training params
-parser.add_argument('--eval_episodes', help='Set number of evaluation episodes', type=int, default=1000)
+parser.add_argument('--eval_episodes', help='Set number of evaluation episodes', type=int, default=100)
 
 parser.add_argument('--filename', help='Path to the pretrained model', default=None)
 

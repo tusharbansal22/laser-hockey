@@ -7,7 +7,7 @@ import sys
 sys.path.insert(0, '.')
 sys.path.insert(1, '..')
 
-from ddpg.agent import DDPGAgent, TD3Agent
+from ddpg.agent import DDPGAgent
 from ddpg.trainer import DDPGTrainer
 from utils.utils import *
 
@@ -15,19 +15,19 @@ from utils.utils import *
 parser = ArgumentParser()
 parser.add_argument('--dry-run', help='Set if running only for sanity check', action='store_true')
 parser.add_argument('--cuda', help='Set if want to train on graphic card', action='store_true', default=True)
-parser.add_argument('--show', help='Set if want to render training process', action='store_true')
+parser.add_argument('--show', help='Set if want to render training process', action='store_true',default=True)
 parser.add_argument('--q', help='Quiet mode (no prints)', action='store_true')
-parser.add_argument('--evaluate', help='Set if want to evaluate agent after the training', action='store_true')
+parser.add_argument('--evaluate', help='Set if want to evaluate agent after the training', action='store_true',default='true')
 parser.add_argument('--mode', help='Mode for training currently: (shooting | defense | normal)', default='normal')
 
 # Training params
 
-parser.add_argument('--max_episodes', help='Max episodes for training', type=int, default=30000)
+parser.add_argument('--max_episodes', help='Max episodes for training', type=int, default=100)
 parser.add_argument('--max_steps', help='Max steps for training', type=int, default=250)
-parser.add_argument('--eval_episodes', help='Set number of evaluation episodes', type=int, default=1000)
+parser.add_argument('--eval_episodes', help='Set number of evaluation episodes', type=int, default=100)
 
 parser.add_argument('--evaluate_every',
-                    help='# of episodes between evaluating agent during the training', type=int, default=2000)
+                    help='# of episodes between evaluating agent during the training', type=int, default=20)
 parser.add_argument('--learning_rate_actor', help='Learning rate', type=float, default=0.0001)
 parser.add_argument('--learning_rate_critic', help='Learning rate', type=float, default=0.0001)
 parser.add_argument('--lr_factor', help='Scale learning rate by', type=float, default=0.5)  # 0.5
@@ -71,11 +71,11 @@ if __name__ == '__main__':
                     quiet=opts.q)
 
 
-    opponents = [h_env.BasicOpponent(weak=True)]
+    opponents = [h_env.BasicOpponent(weak=False)]
     env = h_env.HockeyEnv(mode=mode, verbose=(not opts.q))
 
     if opts.TD3agent:
-        agent = TD3Agent(
+        agent = DDPGAgent(
             logger=logger,
             obs_dim=env.observation_space.shape,
             action_space=env.action_space,

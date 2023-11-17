@@ -117,7 +117,7 @@ class DDPGTrainer:
                 eval_stats['touch'].append(touch)
                 eval_stats['won'].append(won)
                 eval_stats['lost'].append(lost)
-                self.logger.save_model(agent, f'a-{episode_counter}.pk l')
+                self.logger.save_model(agent, f'a-{episode_counter}.pkl')
 
                 self.logger.plot_intermediate_stats(eval_stats, show=False)
 
