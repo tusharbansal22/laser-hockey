@@ -73,21 +73,27 @@ if __name__ == '__main__':
 
     opponents = [h_env.BasicOpponent(weak=False)]
     env = h_env.HockeyEnv(mode=mode, verbose=(not opts.q))
+    agent = DDPGAgent(
+            logger=logger,
+            obs_dim=env.observation_space.shape,
+            action_space=env.action_space,
+            userconfig=vars(opts)
+        )
 
-    if opts.TD3agent:
-        agent = DDPGAgent(
-            logger=logger,
-            obs_dim=env.observation_space.shape,
-            action_space=env.action_space,
-            userconfig=vars(opts)
-        )
-    else:
-        agent = DDPGAgent(
-            logger=logger,
-            obs_dim=env.observation_space.shape,
-            action_space=env.action_space,
-            userconfig=vars(opts)
-        )
+    # if opts.TD3agent:
+    #     agent = DDPGAgent(
+    #         logger=logger,
+    #         obs_dim=env.observation_space.shape,
+    #         action_space=env.action_space,
+    #         userconfig=vars(opts)
+    #     )
+    # else:
+    #     agent = DDPGAgent(
+    #         logger=logger,
+    #         obs_dim=env.observation_space.shape,
+    #         action_space=env.action_space,
+    #         userconfig=vars(opts)
+    #     )
 
     trainer = DDPGTrainer(logger, vars(opts))
     trainer.train(agent, opponents, env, opts.evaluate)
