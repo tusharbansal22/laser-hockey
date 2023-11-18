@@ -2,37 +2,32 @@ from argparse import ArgumentParser
 from laserhockey import hockey_env as h_env
 import os
 import sys
-
-sys.path.insert(0, '.')
-sys.path.insert(1, '..')
 from utils.utils import *
 from evaluator import evaluate
 
+sys.path.extend(['.', '..'])
+
 parser = ArgumentParser()
-
-# Training params
-parser.add_argument('--eval_episodes', help='Set number of evaluation episodes', type=int, default=100)
-
-parser.add_argument('--filename', help='Path to the pretrained model', default=None)
-
-parser.add_argument('--mode', help='Mode for evaluating currently: (shooting | defense)', default='normal')
-parser.add_argument('--show', help='Set if want to render training process', action='store_true', default=False)
-parser.add_argument('--q', help='Quiet mode (no prints)', action='store_true')
-parser.add_argument('--opposite', help='Evaluate agent on opposite side', default=False, action='store_true')
-
+parser.add_argument('--eval_episodes', type=int, default=100)
+parser.add_argument('--filename', default=None)
+parser.add_argument('--mode', default='normal', choices=['normal', 'shooting', 'defense'])
+parser.add_argument('--show', action='store_true', default=False, help='Render training process')
+parser.add_argument('--q', action='store_true', help='Quiet mode (no prints)')
+parser.add_argument('--opposite', action='store_true', default=False, help='Evaluate agent on opposite side')
 opts = parser.parse_args()
 
+modes = {
+    'normal': h_env.HockeyEnv_BasicOpponent.NORMAL,
+    'shooting': h_env.HockeyEnv_BasicOpponent.TRAIN_SHOOTING,
+    'defense': h_env.HockeyEnv_BasicOpponent.TRAIN_DEFENSE
+}
+
 if __name__ == '__main__':
-    if opts.mode == 'normal':
-        mode = h_env.HockeyEnv_BasicOpponent.NORMAL
-    elif opts.mode == 'shooting':
-        mode = h_env.HockeyEnv_BasicOpponent.TRAIN_SHOOTING
-    elif opts.mode == 'defense':
-        mode = h_env.HockeyEnv_BasicOpponent.TRAIN_DEFENSE
-    else:
+    mode = modes.get(opts.mode, None)
+    if mode is None:
         raise ValueError('Unknown training mode. See --help')
 
-    logger = Logger(os.path.dirname(os.path.realpath(__file__)) + '/logs', mode=opts.mode, quiet=opts.q)
+    logger = Logger(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'logs'), mode=opts.mode, quiet=opts.q)
     q_agent = logger.load_model(opts.filename)
     q_agent._config['show'] = opts.show
     env = h_env.HockeyEnv(mode=mode)

@@ -1,7 +1,5 @@
-from collections import defaultdict
 import numpy as np
 import time
-
 import sys
 from utils import utils
 from laserhockey import hockey_env as h_env
@@ -10,29 +8,10 @@ sys.path.insert(0, '.')
 sys.path.insert(1, '..')
 from base.evaluator import evaluate
 
-
-
-import time
-import numpy as np
-import utils
-import h_env
-
 class DDPGTrainer:
-    """
-    The DDPGTrainer class implements a trainer for the DDPGAgent.
-
-    Parameters
-    ----------
-    logger: Logger
-        The variable specifies a logger for model management, plotting and printing.
-    config: dict
-        The variable specifies config variables.
-    """
-
     def __init__(self, logger, config) -> None:
         self.logger = logger
         self._config = config
-
 
     def train(self, agent, opponents, env, eval):
 
@@ -45,7 +24,6 @@ class DDPGTrainer:
 
         rew_stats = []
         loss_stats = []
-        lost_stats = {}
         touch_stats = {}
         won_stats = {}
         eval_stats = {
@@ -54,6 +32,7 @@ class DDPGTrainer:
             'won': [],
             'lost': []
         }
+
         while episode_counter <= self._config['max_episodes']:
             ob = env.reset()
             obs_agent2 = env.obs_agent_two()
@@ -62,10 +41,9 @@ class DDPGTrainer:
             touched = 0
             touch_stats[episode_counter] = 0
             won_stats[episode_counter] = 0
-            lost_stats[episode_counter] = 0
+
             opponent = utils.poll_opponent(opponents)
 
-            first_time_touch = 1
             for step in range(self._config['max_steps']):
                 a1 = agent.act(ob, eps=epsilon)
                 a2 = opponent.act(obs_agent2)
@@ -73,11 +51,10 @@ class DDPGTrainer:
                 (ob_new, reward, done, _info) = env.step(np.hstack([a1, a2]))
                 touched = max(touched, _info['reward_touch_puck'])
                 current_reward = reward + 5 * _info['reward_closeness_to_puck'] - (
-                        1 - touched) * 0.1 + touched * first_time_touch * 0.1 * step
+                        1 - touched) * 0.1 + touched * 0.1 * step
 
                 total_reward += current_reward
 
-                first_time_touch = 1 - touched
                 agent.store_transition((ob, a1, current_reward, ob_new, done))
 
                 if self._config['show']:
@@ -89,14 +66,13 @@ class DDPGTrainer:
 
                 if done:
                     won_stats[episode_counter] = 1 if env.winner == 1 else 0
-                    lost_stats[episode_counter] = 1 if env.winner == -1 else 0
                     break
 
                 ob = ob_new
                 obs_agent2 = env.obs_agent_two()
                 total_step_counter += 1
 
-            loss_stats.extend(agent.train(iter_fit=iter_fit, total_step_counter=episode_counter))
+            loss_stats.extend(agent.train(iter_fit=iter_fit, total_step_counter=total_step_counter))
 
             rew_stats.append(total_reward)
 
@@ -124,7 +100,7 @@ class DDPGTrainer:
             env.close()
 
         # Print train stats
-        self.logger.print_stats(rew_stats, touch_stats, won_stats, lost_stats)
+        self.logger.print_stats(rew_stats, touch_stats, won_stats)
 
         self.logger.info('Saving training statistics...')
 

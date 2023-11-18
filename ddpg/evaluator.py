@@ -23,68 +23,32 @@ def evaluate(agent, env, opponent, eval_episodes, quiet=False, action_mapping=No
         touch_stats[episode_counter] = 0
         won_stats[episode_counter] = 0
         lost_stats[episode_counter] = 0
+
         for step in range(env.max_timesteps):
-
             if evaluate_on_opposite_side:
-                if action_mapping is not None:
-                    # DQN act
-                    a2 = agent.act(obs_agent2, eps=0)
-                    a2 = action_mapping[a2]
-                else:
-                    a2 = agent.act(obs_agent2)
-
-                if agent._config['mode'] in ['defense', 'normal']:
-                    a1 = opponent.act(ob)
-                    if not isinstance(a1, np.ndarray):
-                        a1 = action_mapping[a1]
-                elif agent._config['mode'] == 'shooting':
-                    a1 = [0, 0, 0, 0]
-                else:
-                    a1 = opponent.act(ob)
+                a1, a2 = (opponent.act(ob), agent.act(obs_agent2, eps=0)) if agent._config['mode'] in ['defense', 'normal'] else ([0, 0, 0, 0], opponent.act(ob))
+                a1 = a1 if isinstance(a1, np.ndarray) else action_mapping[a1]
+                a2 = action_mapping[a2]
 
             else:
-                if action_mapping is not None:
-                    # DQN act
-                    a1 = agent.act(ob, eps=0)
-                    a1 = action_mapping[a1]
-                else:
-                    # SAC act
-                    a1 = agent.act(ob)
-
-                if agent._config['mode'] in ['defense', 'normal']:
-                    a2 = opponent.act(obs_agent2)
-                    if not isinstance(a2, np.ndarray):
-                        a2 = action_mapping[a2]
-                elif agent._config['mode'] == 'shooting':
-                    a2 = [0, 0, 0, 0]
-                else:
-                    raise NotImplementedError(f'Training for {agent._config["mode"]} not implemented.')
+                a1, a2 = (agent.act(ob, eps=0), opponent.act(obs_agent2)) if agent._config['mode'] in ['defense', 'normal'] else (action_mapping[agent.act(ob, eps=0)], [0, 0, 0, 0])
+                a1 = action_mapping[a1] if isinstance(a1, np.ndarray) else a1
+                a2 = a2 if isinstance(a2, np.ndarray) else action_mapping[a2]
 
             (ob_new, reward, done, _info) = env.step(np.hstack([a1, a2]))
-            ob = ob_new
-            obs_agent2 = env.obs_agent_two()
+            ob, obs_agent2 = ob_new, env.obs_agent_two()
 
-            if evaluate_on_opposite_side:
-                # Not really a way to implement this, given the structure of the env...
-                touch_stats[episode_counter] = 0
-                total_reward -= reward
-
-            else:
-                if _info['reward_touch_puck'] > 0:
-                    touch_stats[episode_counter] = 1
-
-                total_reward += reward
+            if not evaluate_on_opposite_side:
+                touch_stats[episode_counter] = 1 if _info['reward_touch_puck'] > 0 else 0
+                total_reward += -reward if evaluate_on_opposite_side else reward
 
             if agent._config['show']:
                 time.sleep(0.01)
                 env.render()
+            
             if done:
-                if evaluate_on_opposite_side:
-                    won_stats[episode_counter] = 1 if env.winner == -1 else 0
-                    lost_stats[episode_counter] = 1 if env.winner == 1 else 0
-                else:
-                    won_stats[episode_counter] = 1 if env.winner == 1 else 0
-                    lost_stats[episode_counter] = 1 if env.winner == -1 else 0
+                won_stats[episode_counter] = 1 if env.winner == 1 else 0
+                lost_stats[episode_counter] = 1 if env.winner == -1 else 0
                 break
 
         rew_stats.append(total_reward)
@@ -93,15 +57,7 @@ def evaluate(agent, env, opponent, eval_episodes, quiet=False, action_mapping=No
                                             touched=touch_stats[episode_counter])
 
     if not quiet:
-        # Print evaluation stats
         agent.logger.print_stats(rew_stats, touch_stats, won_stats, lost_stats)
 
-    # Toggle the verbose flag onto the old value
     env.verbose = old_verbose
-
-    return (
-        np.mean(rew_stats),
-        np.mean(list(touch_stats.values())),
-        np.mean(list(won_stats.values())),
-        np.mean(list(lost_stats.values()))
-    )
+    return np.mean(rew_stats), np.mean(list(touch_stats.values())), np.mean(list(won_stats.values())), np.mean(list(lost_stats.values()))
