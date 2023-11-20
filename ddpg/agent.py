@@ -98,7 +98,7 @@ class DDPGAgent(object):
             "learning_rate_critic": 0.0002,
             "hidden_sizes": [256, 256],
             'tau': 0.0001,
-            'update_target_every': 1000  # Adjust as needed
+            'update_target_every': 100
         }
         self.buffer = UniformExperienceReplay(max_size=self._config['buffer_size'])
 

@@ -8,7 +8,6 @@ from evaluator import evaluate
 sys.path.extend(['.', '..'])
 
 parser = ArgumentParser()
-parser.add_argument('--eval_episodes', type=int, default=100)
 parser.add_argument('--filename', default=None)
 parser.add_argument('--mode', default='normal', choices=['normal', 'shooting', 'defense'])
 parser.add_argument('--show', action='store_true', default=False, help='Render training process')
@@ -33,4 +32,4 @@ if __name__ == '__main__':
     env = h_env.HockeyEnv(mode=mode)
     q_agent.eval()
     opponent = h_env.BasicOpponent(weak=True)
-    evaluate(q_agent, env, opponent, opts.eval_episodes, evaluate_on_opposite_side=opts.opposite)
+    evaluate(q_agent, env, opponent, 100, evaluate_on_opposite_side=opts.opposite)
