@@ -3,9 +3,7 @@ import numpy as np
 
 
 class Actor(torch.nn.Module):
-    def __init__(self, num_inputs, n_actions, device, learning_rate, lr_milestones, lr_factor=0.5,
-
-                 hidden_sizes=[256, 256]):
+    def __init__(self, num_inputs, n_actions, device, learning_rate, lr_milestones, lr_factor=0.5,hidden_sizes=[256, 256]):
         super(Actor, self).__init__()
 
         self.num_inputs = num_inputs
@@ -15,11 +13,7 @@ class Actor(torch.nn.Module):
         self.layers = torch.nn.ModuleList([torch.nn.Linear(i, o) for i, o in zip(layer_sizes[:-1], layer_sizes[1:])])
 
         self.device = device
-        if device.type == 'cuda':
-            self.cuda()
-
-        self.optimizer = torch.optim.Adam(self.parameters(),
- lr=learning_rate)
+        self.optimizer = torch.optim.Adam(self.parameters(),lr=learning_rate)
 
         self.lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
             self.optimizer, milestones=lr_milestones, gamma=lr_factor
@@ -93,10 +87,6 @@ class TwinCritic(torch.nn.Module):
         layer_sizes = [num_inputs[0] + 4] + hidden_sizes + [1]
         self.layers1 = torch.nn.ModuleList([torch.nn.Linear(i, o) for i, o in zip(layer_sizes[:-1], layer_sizes[1:])])
         self.layers2 = torch.nn.ModuleList([torch.nn.Linear(i, o) for i, o in zip(layer_sizes[:-1], layer_sizes[1:])])
-        self.device = device
-        if device.type == 'cuda':
-            self.cuda()
-
         self.optimizer = torch.optim.Adam(self.parameters(),
                                           lr=learning_rate)
         self.lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
